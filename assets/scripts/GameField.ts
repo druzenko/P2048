@@ -20,7 +20,7 @@ const enum eTouchMoveDirection {
     Down
 }
 
-class CellInfo {
+export class CellInfo {
 
     public block:  cc.Node;
     public value:  number;
@@ -102,8 +102,32 @@ export default class GameField extends cc.Component {
                 graphicsComponent.fill();
             }
         }
+        
+        let save = Helper.loadGame(this.dimension);
+        
+        let isSaveValid = false;
 
-        this.restartGame();
+        if (save != undefined && save != null) {
+
+            save = save.slice(1, -1)
+            let splited = save.split(",");
+
+            if (splited.length % 3 == 0 && splited.length >= 6) {
+
+                for (let i = 0; i < splited.length; i += 3) {
+                    
+                    this.spawnBlockAtCell(
+                        Helper.GetCellNumberByCellCoordinates(parseInt(splited[i]), parseInt(splited[i + 1]), this.dimension),
+                        parseInt(splited[i + 2]));
+                }
+                isSaveValid = true;
+            }
+        }
+
+        if (!isSaveValid) {
+
+            this.restartGame();
+        }
 
         this.node.on(cc.Node.EventType.TOUCH_START, this.onTouchStart, this, true);
         this.node.parent.on(cc.Node.EventType.TOUCH_END, this.onTouchEnd, this, true);
@@ -172,7 +196,10 @@ export default class GameField extends cc.Component {
 
         cc.tween(this.node)
             .delay(this.moveBlockTime)
-            .call(() => { this.spawnBlockAtCell(emptyCells[Helper.RandomIntInRange(0, emptyCells.length - 1)]); })
+            .call(() => {
+                this.spawnBlockAtCell(emptyCells[Helper.RandomIntInRange(0, emptyCells.length - 1)]);
+                Helper.saveGame(this.mCells, this.dimension);
+            })
             .start();
         
     }
@@ -398,7 +425,7 @@ export default class GameField extends cc.Component {
         this.spawnBlockAtCell(CellNumber2);
     }
 
-    spawnBlockAtCell(cellNumber: number) {
+    spawnBlockAtCell(cellNumber: number, value?: number) {
 
         let block = new cc.Node;
         block.parent = this.node;
@@ -413,7 +440,12 @@ export default class GameField extends cc.Component {
         let textNode = new cc.Node;
         textNode.parent = block;
         let labelComponent = textNode.addComponent(cc.Label);
-        let value = (Math.random() < 0.5) ? 2 : 4;
+
+        if (!value) {
+
+            value = (Math.random() < 0.5) ? 2 : 4;
+        }
+
         labelComponent.string = value.toString();
 
         let coords = Helper.GetCellCoordinateByCellNumber(cellNumber, this.dimension);

@@ -9,7 +9,6 @@
     "forceConsistentCasingInFileNames": true
   },
   "exclude": [
-    "node_modules",
     "library",
     "local",
     "temp",
