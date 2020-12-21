@@ -44,7 +44,6 @@ export default class Helper {
         }
 
         let encrypted = CryptoJS.AES.encrypt(JSON.stringify(save), encryptKey);
-        let str = encrypted.toString();
         cc.sys.localStorage.setItem("field" + dimension.toString(), encrypted.toString());
     }
 
@@ -59,5 +58,25 @@ export default class Helper {
         }
 
         return null;
+    }
+
+    public static saveScore(score: number, dimension: number, bestScore: boolean): void {
+
+        let key = (bestScore) ? "BestScore" : "Score";
+        let encrypted = CryptoJS.AES.encrypt(score.toString(), encryptKey);
+        cc.sys.localStorage.setItem(key + dimension.toString(), encrypted.toString());
+    }
+
+    public static loadScore(dimension: number, bestScore: boolean): number {
+
+        let key = (bestScore) ? "BestScore" : "Score";
+        let encrypted = cc.sys.localStorage.getItem(key + dimension.toString());
+        if (encrypted != null) {
+
+            let decrypted = CryptoJS.AES.decrypt(encrypted, encryptKey);
+            return parseInt(decrypted.toString(CryptoJS.enc.Utf8));
+        }
+
+        return 0;
     }
 }

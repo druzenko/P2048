@@ -6,6 +6,7 @@
 //  - https://docs.cocos.com/creator/manual/en/scripting/life-cycle-callbacks.html
 
 import Helper from "./Helper";
+import * as ED from "./EventDispatcher"
 
 cc.macro.ENABLE_MULTI_TOUCH = false;
 
@@ -31,7 +32,7 @@ export class CellInfo {
 }
 
 @ccclass
-export default class GameField extends cc.Component {
+export default class GameField extends cc.Component implements ED.EventListener {
 
     @property({tooltip: 'Game field dimension'})
     dimension = 4;
@@ -53,6 +54,8 @@ export default class GameField extends cc.Component {
 
     @property({visible: false}) mIsTouchStarted = false;
 
+    @property({visible: false}) mIsTouchesEnabled = true;
+
     @property({visible: false}) mTouchStartPosition = null;
 
     @property({visible: false}) wasAnyMove = false;
@@ -61,7 +64,13 @@ export default class GameField extends cc.Component {
 
     // LIFE-CYCLE CALLBACKS:
 
-    // onLoad () {}
+    onLoad () {
+
+        let typesSet = new Set<string>();
+        typesSet.add("GameOverDialogUndo");
+        typesSet.add("GameOverDialogNewGame");
+        ED.EventDispatcher.addListener(this, typesSet);
+    }
 
     start () {
 
@@ -127,7 +136,12 @@ export default class GameField extends cc.Component {
         if (!isSaveValid) {
 
             this.restartGame();
+        } else {
+
+            ED.EventDispatcher.dispatchEvent(new ED.Event("GameLoaded", {dimension: this.dimension}));
         }
+
+        
 
         this.node.on(cc.Node.EventType.TOUCH_START, this.onTouchStart, this, true);
         this.node.parent.on(cc.Node.EventType.TOUCH_END, this.onTouchEnd, this, true);
@@ -139,11 +153,12 @@ export default class GameField extends cc.Component {
         this.node.off(cc.Node.EventType.TOUCH_START, this.onTouchStart, this, true);
         this.node.parent.off(cc.Node.EventType.TOUCH_END, this.onTouchStart, this, true);
         this.node.parent.off(cc.Node.EventType.TOUCH_CANCEL, this.onTouchStart, this, true);
+        ED.EventDispatcher.removeListener(this);
     }
 
     onTouchStart(event: cc.Event.EventTouch) {
 
-        if (!this.mIsTouchStarted)
+        if (!this.mIsTouchStarted && this.mIsTouchesEnabled)
         {
             this.mIsTouchStarted = true;
             this.mTouchStartPosition = event.getLocation();
@@ -176,6 +191,12 @@ export default class GameField extends cc.Component {
 
                 this.spawnNewBlock();
             }
+
+            if (this.isGameOver()) {
+
+                ED.EventDispatcher.dispatchEvent(new ED.Event("GameOverDialogOpen", null));
+                this.mIsTouchesEnabled = false;
+            }
         }
     }
 
@@ -194,14 +215,69 @@ export default class GameField extends cc.Component {
             }
         }
 
-        cc.tween(this.node)
+        if (emptyCells.length > 0) {
+
+            cc.tween(this.node)
             .delay(this.moveBlockTime)
             .call(() => {
                 this.spawnBlockAtCell(emptyCells[Helper.RandomIntInRange(0, emptyCells.length - 1)]);
                 Helper.saveGame(this.mCells, this.dimension);
             })
             .start();
-        
+
+        }
+    }
+
+    isGameOver() {
+
+        for (let x = 0; x < this.dimension; ++x) {
+
+            let previousValue = 0;
+            for (let y = 0; y < this.dimension; ++y) {
+                
+                if (this.mCells[x][y].block == null) {
+
+                    return false;
+                }
+
+                if (previousValue == 0) {
+
+                    previousValue = this.mCells[x][y].value;
+                }
+                else {
+
+                    if (previousValue == this.mCells[x][y].value) {
+
+                        return false;
+                    }
+
+                    previousValue = this.mCells[x][y].value;
+                }
+            }
+        }
+
+        for (let y = 0; y < this.dimension; ++y) {
+
+            let previousValue = 0;
+            for (let x = 0; x < this.dimension; ++x) {
+
+                if (previousValue == 0) {
+
+                    previousValue = this.mCells[x][y].value;
+                }
+                else {
+
+                    if (previousValue == this.mCells[x][y].value) {
+
+                        return false;
+                    }
+
+                    previousValue = this.mCells[x][y].value;
+                }
+            }
+        }
+
+        return true;
     }
 
     moveBlocks(direction: eTouchMoveDirection) {
@@ -391,6 +467,11 @@ export default class GameField extends cc.Component {
         {
             this.mCells[newX][newY].value = this.mCells[newX][newY].value * 2;
             let nodeToDelete = this.mCells[newX][newY].block;
+            ED.EventDispatcher.dispatchEvent(new ED.Event("CurrentScoreChanged",
+            { 
+                dimension: this.dimension,
+                diff: this.mCells[newX][newY].value
+            }));
 
             cc.tween(this.node)
                 .delay(this.moveBlockTime)
@@ -405,6 +486,7 @@ export default class GameField extends cc.Component {
         this.mCells[newX][newY].block = this.mCells[oldX][oldY].block;
         this.mCells[newX][newY].block.children[0].getComponent(cc.Label).string = this.mCells[newX][newY].value.toString();
         this.mCells[oldX][oldY].block = null;
+        this.mCells[oldX][oldY].value = 0;
         let newPosition = this.getBlockPositionByCellNumber(Helper.GetCellNumberByCellCoordinates(newX, newY, this.dimension));
         cc.tween(this.mCells[newX][newY].block).to(this.moveBlockTime, {x: newPosition.x, y: newPosition.y}).start();
 
@@ -414,6 +496,21 @@ export default class GameField extends cc.Component {
     // update (dt) {}
 
     restartGame() {
+
+        ED.EventDispatcher.dispatchEvent(new ED.Event("GameReseted", {dimension: this.dimension}));
+
+        this.mCells.forEach(column => {
+            
+            column.forEach(cell => {
+
+                if (cell.block) {
+
+                    cell.value = 0;
+                    cell.block.destroy();
+                    cell.block = null;
+                }
+            });
+        });
 
         var CellNumber1 = Helper.RandomIntInRange(0, Math.pow(this.dimension, 2) - 1);
         var CellNumber2 = CellNumber1;
@@ -458,5 +555,20 @@ export default class GameField extends cc.Component {
         let coords = Helper.GetCellCoordinateByCellNumber(cellNumber, this.dimension);
         return new cc.Vec2((coords.x + 1) * this.mSpan + (coords.x + 0.5) * this.mBlockSize - this.mGameFieldSize * 0.5,
                             (coords.y + 1) * this.mSpan + (coords.y + 0.5) * this.mBlockSize - this.mGameFieldSize * 0.5);
+    }
+
+    onEventReceived(event: ED.Event): void {
+
+        if (event.type == "GameOverDialogUndo") {
+
+            ED.EventDispatcher.dispatchEvent(new ED.Event("GameOverDialogClose", null));
+            this.mIsTouchesEnabled = true;
+        }
+        else if (event.type == "GameOverDialogNewGame") {
+
+            ED.EventDispatcher.dispatchEvent(new ED.Event("GameOverDialogClose", null));
+            this.restartGame();
+            this.mIsTouchesEnabled = true;
+        }
     }
 }
