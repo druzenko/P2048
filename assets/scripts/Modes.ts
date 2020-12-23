@@ -34,6 +34,8 @@ export default class NewClass extends cc.Component {
             this.hideModesLayout();
             ED.EventDispatcher.dispatchEvent(new ED.Event("ModeChanged", { dimension: dimension}));
         }
+
+        ED.EventDispatcher.dispatchEvent(new ED.Event("PlayAudio", {clip: "ButtonClick"}));
     }
 
     showModesLayout() {

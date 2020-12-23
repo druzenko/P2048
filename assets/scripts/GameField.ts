@@ -1,5 +1,5 @@
 import Helper from "./Helper";
-import * as ED from "./EventDispatcher"
+import * as ED from "./EventDispatcher";
 
 cc.macro.ENABLE_MULTI_TOUCH = false;
 
@@ -217,6 +217,7 @@ export default class GameField extends cc.Component implements ED.EventListener 
             if (this.wasAnyMove) {
 
                 this.spawnNewBlock();
+                ED.EventDispatcher.dispatchEvent(new ED.Event("PlayAudio", {clip: "MoveBlock"}));
             }
 
             if (this.isGameOver()) {

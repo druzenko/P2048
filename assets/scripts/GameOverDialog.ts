@@ -39,6 +39,8 @@ export default class GameOverDialog extends cc.Component implements ED.EventList
                 ED.EventDispatcher.dispatchEvent(new ED.Event("GameOverDialogNewGame", null));
             }
 
+            ED.EventDispatcher.dispatchEvent(new ED.Event("PlayAudio", {clip: "ButtonClick"}));
+
             this.closeDialog();
         }
     }
