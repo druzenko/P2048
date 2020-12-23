@@ -26,6 +26,26 @@ export default class Helper {
         return y * dimension + x;
     }
 
+    public static saveProperty(key: string, value: string) {
+
+        let encryptedKey = CryptoJS.AES.encrypt(key, encryptKey);
+        let encryptedValue = CryptoJS.AES.encrypt(value, encryptKey);
+        cc.sys.localStorage.setItem(encryptedKey.toString(), encryptedValue.toString());
+    }
+
+    public static loadProperty(key: string): string {
+
+        let encryptedKey = CryptoJS.AES.encrypt(key, encryptKey);
+        let encrypted = cc.sys.localStorage.getItem(encryptedKey.toString());
+        if (encrypted != null) {
+
+            let decrypted = CryptoJS.AES.decrypt(encrypted, encryptKey);
+            return decrypted.toString(CryptoJS.enc.Utf8);
+        }
+
+        return null;
+    }
+
     public static saveGame(cells: Array<Array<GameField.CellInfo>>, dimension: number) {
 
         let save = [];

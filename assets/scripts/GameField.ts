@@ -1,10 +1,3 @@
-// Learn TypeScript:
-//  - https://docs.cocos.com/creator/manual/en/scripting/typescript.html
-// Learn Attribute:
-//  - https://docs.cocos.com/creator/manual/en/scripting/reference/attributes.html
-// Learn life-cycle callbacks:
-//  - https://docs.cocos.com/creator/manual/en/scripting/life-cycle-callbacks.html
-
 import Helper from "./Helper";
 import * as ED from "./EventDispatcher"
 
@@ -69,6 +62,7 @@ export default class GameField extends cc.Component implements ED.EventListener 
         let typesSet = new Set<string>();
         typesSet.add("GameOverDialogUndo");
         typesSet.add("GameOverDialogNewGame");
+        typesSet.add("ModeChanged");
         ED.EventDispatcher.addListener(this, typesSet);
     }
 
@@ -83,7 +77,44 @@ export default class GameField extends cc.Component implements ED.EventListener 
             }
         }
 
+        this.node.on(cc.Node.EventType.TOUCH_START, this.onTouchStart, this, true);
+        this.node.parent.on(cc.Node.EventType.TOUCH_END, this.onTouchEnd, this, true);
+        this.node.parent.on(cc.Node.EventType.TOUCH_CANCEL, this.onTouchEnd, this, true);
+
+        let lastDimension = Helper.loadProperty("LastDimension");
+        if (lastDimension) {
+
+            this.dimension = parseInt(lastDimension);
+            this.dimension = (this.dimension > 0 && this.dimension <= this.mMaxDimension) ? this.dimension : 4;
+        }
+
+        this.reinintGameField();
+    }
+
+    clearCells() {
+
+        this.mCells.forEach(column => {
+            
+            column.forEach(cell => {
+
+                if (cell.block) {
+
+                    cell.value = 0;
+                    cell.block.destroy();
+                    cell.block = null;
+                }
+            });
+        });
+    }
+
+    reinintGameField() {
+
+        this.clearCells();
+
+        Helper.saveProperty("LastDimension", this.dimension.toString());
+
         var graphicsComponent = this.node.getComponent(cc.Graphics);
+        graphicsComponent.clear(true);
 
         var fillColor = new cc.Color(0, 0, 255, 50);
         graphicsComponent.fillColor = fillColor;
@@ -140,12 +171,6 @@ export default class GameField extends cc.Component implements ED.EventListener 
 
             ED.EventDispatcher.dispatchEvent(new ED.Event("GameLoaded", {dimension: this.dimension}));
         }
-
-        
-
-        this.node.on(cc.Node.EventType.TOUCH_START, this.onTouchStart, this, true);
-        this.node.parent.on(cc.Node.EventType.TOUCH_END, this.onTouchEnd, this, true);
-        this.node.parent.on(cc.Node.EventType.TOUCH_CANCEL, this.onTouchEnd, this, true);
     }
 
     onDestroy() {
@@ -172,6 +197,8 @@ export default class GameField extends cc.Component implements ED.EventListener 
             var endTouchLocation = event.getLocation();
             var dx = endTouchLocation.x - this.mTouchStartPosition.x;
             var dy = endTouchLocation.y - this.mTouchStartPosition.y;
+
+            this.wasAnyMove = false;
 
             if (cc.Vec2.distance(this.mTouchStartPosition, endTouchLocation) > 10)
             {
@@ -281,8 +308,6 @@ export default class GameField extends cc.Component implements ED.EventListener 
     }
 
     moveBlocks(direction: eTouchMoveDirection) {
-
-        this.wasAnyMove = false;
 
         switch (direction)
         {
@@ -497,20 +522,9 @@ export default class GameField extends cc.Component implements ED.EventListener 
 
     restartGame() {
 
+        this.clearCells();
+        
         ED.EventDispatcher.dispatchEvent(new ED.Event("GameReseted", {dimension: this.dimension}));
-
-        this.mCells.forEach(column => {
-            
-            column.forEach(cell => {
-
-                if (cell.block) {
-
-                    cell.value = 0;
-                    cell.block.destroy();
-                    cell.block = null;
-                }
-            });
-        });
 
         var CellNumber1 = Helper.RandomIntInRange(0, Math.pow(this.dimension, 2) - 1);
         var CellNumber2 = CellNumber1;
@@ -569,6 +583,15 @@ export default class GameField extends cc.Component implements ED.EventListener 
             ED.EventDispatcher.dispatchEvent(new ED.Event("GameOverDialogClose", null));
             this.restartGame();
             this.mIsTouchesEnabled = true;
+        }
+        else if (event.type == "ModeChanged") {
+
+            let dimension = event.data["dimension"];
+            if (dimension != this.dimension) {
+
+                this.dimension = dimension;
+                this.reinintGameField();
+            }
         }
     }
 }
