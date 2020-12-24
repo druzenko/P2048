@@ -24,14 +24,17 @@ export default class NewClass extends cc.Component {
             if (this.mIsModesShown == false) {
 
                 this.showModesLayout();
+                ED.EventDispatcher.dispatchEvent(new ED.Event("OpenTouchBlocker", { target: this.node, time: 0.1 }));
             } else {
     
                 this.hideModesLayout();
+                ED.EventDispatcher.dispatchEvent(new ED.Event("CloseTouchBlocker", { time: 0.1 }));
             }
         } else {
 
             let dimension = parseInt(event.currentTarget.name);
             this.hideModesLayout();
+            ED.EventDispatcher.dispatchEvent(new ED.Event("CloseTouchBlocker", { time: 0.1 }));
             ED.EventDispatcher.dispatchEvent(new ED.Event("ModeChanged", { dimension: dimension}));
         }
 

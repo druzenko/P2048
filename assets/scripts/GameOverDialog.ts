@@ -53,6 +53,8 @@ export default class GameOverDialog extends cc.Component implements ED.EventList
             .to(0.3, {scale: 1})
             .call(() => { this.mIsButtonsActive = true; })
             .start();
+
+        ED.EventDispatcher.dispatchEvent(new ED.Event("OpenTouchBlocker", { target: this.node, time: 0.3 }));
     }
 
     closeDialog() {
@@ -62,6 +64,8 @@ export default class GameOverDialog extends cc.Component implements ED.EventList
             .to(0.3, {scale: 0})
             .call(() => { this.node.active = false; })
             .start();
+
+        ED.EventDispatcher.dispatchEvent(new ED.Event("CloseTouchBlocker", { time: 0.3 }));
     }
 
     onEventReceived(event: ED.Event): void {
