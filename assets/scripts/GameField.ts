@@ -63,6 +63,7 @@ export default class GameField extends cc.Component implements ED.EventListener 
         typesSet.add("DialogPopupLeft");
         typesSet.add("DialogPopupRight");
         typesSet.add("ModeChanged");
+        typesSet.add("Undo");
         ED.EventDispatcher.addListener(this, typesSet);
     }
 
@@ -109,8 +110,6 @@ export default class GameField extends cc.Component implements ED.EventListener 
 
     reinintGameField() {
 
-        this.clearCells();
-
         Helper.saveProperty("LastDimension", this.dimension.toString());
 
         var graphicsComponent = this.node.getComponent(cc.Graphics);
@@ -142,25 +141,43 @@ export default class GameField extends cc.Component implements ED.EventListener 
                 graphicsComponent.fill();
             }
         }
-        
-        let save = Helper.loadGame(this.dimension);
-        
+
+        this.loadGameField(null);
+    }
+
+    loadGameField(aSave: Array<number>) {
+
+        this.clearCells();
+
         let isSaveValid = false;
 
-        if (save != undefined && save != null) {
+        if (aSave) {
 
-            save = save.slice(1, -1)
-            let splited = save.split(",");
+            for (let i = 0; i < aSave.length; i += 3) {
+                        
+                this.spawnBlockAtCell(Helper.GetCellNumberByCellCoordinates(aSave[i], aSave[i + 1], this.dimension), aSave[i + 2]);
+            }
+            isSaveValid = true;
 
-            if (splited.length % 3 == 0 && splited.length >= 6) {
+        } else {
 
-                for (let i = 0; i < splited.length; i += 3) {
-                    
-                    this.spawnBlockAtCell(
-                        Helper.GetCellNumberByCellCoordinates(parseInt(splited[i]), parseInt(splited[i + 1]), this.dimension),
-                        parseInt(splited[i + 2]));
+            let save = Helper.loadGame(this.dimension);
+
+            if (save != undefined && save != null) {
+
+                save = save.slice(1, -1)
+                let splited = save.split(",");
+
+                if (splited.length % 3 == 0 && splited.length >= 6) {
+
+                    for (let i = 0; i < splited.length; i += 3) {
+                        
+                        this.spawnBlockAtCell(
+                            Helper.GetCellNumberByCellCoordinates(parseInt(splited[i]), parseInt(splited[i + 1]), this.dimension),
+                            parseInt(splited[i + 2]));
+                    }
+                    isSaveValid = true;
                 }
-                isSaveValid = true;
             }
         }
 
@@ -169,6 +186,7 @@ export default class GameField extends cc.Component implements ED.EventListener 
             this.restartGame();
         } else {
 
+            Helper.saveGame(this.mCells, this.dimension);
             ED.EventDispatcher.dispatchEvent(new ED.Event("GameLoaded", {dimension: this.dimension}));
         }
     }
@@ -524,6 +542,9 @@ export default class GameField extends cc.Component implements ED.EventListener 
     restartGame() {
 
         this.clearCells();
+
+        Helper.ResetLastFieldsStack(this.dimension);
+        Helper.ClearPreviousGameField();
         
         ED.EventDispatcher.dispatchEvent(new ED.Event("GameReseted", {dimension: this.dimension}));
 
@@ -578,7 +599,6 @@ export default class GameField extends cc.Component implements ED.EventListener 
 
         if (event.type == "DialogPopupLeft") {
 
-            //ED.EventDispatcher.dispatchEvent(new ED.Event("GameOverDialogClose", null));
             let DialogType = event.data["type"];
 
             if (DialogType == "GameOver") {
@@ -610,6 +630,15 @@ export default class GameField extends cc.Component implements ED.EventListener 
 
                 this.dimension = dimension;
                 this.reinintGameField();
+            }
+        }
+        else if (event.type == "Undo") {
+
+            let LastField = Helper.PopLastField(this.dimension);
+            if (LastField) {
+
+                Helper.ClearPreviousGameField();
+                this.loadGameField(LastField);
             }
         }
     }

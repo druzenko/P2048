@@ -1,11 +1,15 @@
 const {ccclass, property} = cc._decorator;
 
 import * as GameField from "./GameField";
-//import EncryptJS from "./encryptjs";
-//var EncryptJS = require("encryptjs");
 import CryptoJS = require("crypto-js");
 
 let encryptKey = "Vitalier";
+
+let gLastFieldsStack = new Map<number, Array<Array<number>>>();
+
+let gMaxStackNumber: number = 100;
+
+let gPreviousGameField: Array<number> = null;
 
 @ccclass
 export default class Helper {
@@ -24,6 +28,32 @@ export default class Helper {
     public static GetCellNumberByCellCoordinates(x: number, y: number, dimension: number) {
 
         return y * dimension + x;
+    }
+
+    public static ResetLastFieldsStack(dimension: number) {
+
+        if (gLastFieldsStack.has(dimension)) {
+
+            gLastFieldsStack.delete(dimension);
+        }
+    }
+
+    public static PopLastField(dimension: number): Array<number> {
+
+        let lastField: Array<number> = null;
+        let stack = gLastFieldsStack.get(dimension);
+        if (stack && stack.length > 0) {
+
+            lastField = stack[stack.length - 1];
+            stack.splice(stack.length - 1, 1);
+        }
+        
+        return lastField;
+    }
+
+    public static ClearPreviousGameField(): void {
+
+        gPreviousGameField = null;
     }
 
     public static saveProperty(key: string, value: string) {
@@ -48,7 +78,7 @@ export default class Helper {
 
     public static saveGame(cells: Array<Array<GameField.CellInfo>>, dimension: number) {
 
-        let save = [];
+        let save: Array<number> = [];
 
         for (let x = 0; x < dimension; ++x) {
 
@@ -65,6 +95,26 @@ export default class Helper {
 
         let encrypted = CryptoJS.AES.encrypt(JSON.stringify(save), encryptKey);
         cc.sys.localStorage.setItem("field" + dimension.toString(), encrypted.toString());
+
+        if (gPreviousGameField) {
+
+            let stack = gLastFieldsStack.get(dimension);
+
+            if (stack == null) {
+
+                stack = new Array<Array<number>>();
+                gLastFieldsStack.set(dimension, stack);
+            }
+
+            if (stack.length >= gMaxStackNumber) {
+
+                stack.splice(0, 1);
+            }
+
+            stack.push(gPreviousGameField);
+        }
+
+        gPreviousGameField = save;
     }
 
     public static loadGame(dimension: number): string {

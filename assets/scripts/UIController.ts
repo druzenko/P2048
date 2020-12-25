@@ -38,6 +38,8 @@ export default class UIController extends cc.Component implements ED.EventListen
 
         if (event.currentTarget.name == "UndoButton") {
 
+            ED.EventDispatcher.dispatchEvent(new ED.Event("Undo", null));
+            
         } else if (event.currentTarget.name == "ResetButton") {
 
             ED.EventDispatcher.dispatchEvent(new ED.Event("OpenDialogPopup", {type: "EnsureNewGame"}));
