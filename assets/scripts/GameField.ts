@@ -60,8 +60,8 @@ export default class GameField extends cc.Component implements ED.EventListener 
     onLoad () {
 
         let typesSet = new Set<string>();
-        typesSet.add("GameOverDialogUndo");
-        typesSet.add("GameOverDialogNewGame");
+        typesSet.add("DialogPopupLeft");
+        typesSet.add("DialogPopupRight");
         typesSet.add("ModeChanged");
         ED.EventDispatcher.addListener(this, typesSet);
     }
@@ -222,7 +222,7 @@ export default class GameField extends cc.Component implements ED.EventListener 
 
             if (this.isGameOver()) {
 
-                ED.EventDispatcher.dispatchEvent(new ED.Event("GameOverDialogOpen", null));
+                ED.EventDispatcher.dispatchEvent(new ED.Event("OpenDialogPopup", {type: "GameOver"}));
                 this.mIsTouchesEnabled = false;
             }
         }
@@ -535,6 +535,8 @@ export default class GameField extends cc.Component implements ED.EventListener 
 
         this.spawnBlockAtCell(CellNumber1);
         this.spawnBlockAtCell(CellNumber2);
+
+        Helper.saveGame(this.mCells, this.dimension);
     }
 
     spawnBlockAtCell(cellNumber: number, value?: number) {
@@ -574,15 +576,31 @@ export default class GameField extends cc.Component implements ED.EventListener 
 
     onEventReceived(event: ED.Event): void {
 
-        if (event.type == "GameOverDialogUndo") {
+        if (event.type == "DialogPopupLeft") {
 
-            ED.EventDispatcher.dispatchEvent(new ED.Event("GameOverDialogClose", null));
+            //ED.EventDispatcher.dispatchEvent(new ED.Event("GameOverDialogClose", null));
+            let DialogType = event.data["type"];
+
+            if (DialogType == "GameOver") {
+
+            } else if (DialogType == "EnsureNewGame") {
+
+            }
+
             this.mIsTouchesEnabled = true;
         }
-        else if (event.type == "GameOverDialogNewGame") {
+        else if (event.type == "DialogPopupRight") {
 
-            ED.EventDispatcher.dispatchEvent(new ED.Event("GameOverDialogClose", null));
-            this.restartGame();
+            let DialogType = event.data["type"];
+
+            if (DialogType == "GameOver") {
+
+                this.restartGame();
+            } else if (DialogType == "EnsureNewGame") {
+
+                this.restartGame();
+            }
+            
             this.mIsTouchesEnabled = true;
         }
         else if (event.type == "ModeChanged") {

@@ -2,10 +2,25 @@ const {ccclass, property} = cc._decorator;
 
 import * as ED from "./EventDispatcher"
 
+let Dialogs = {
+    "GameOver": {
+        text: "Game Over",
+        leftButtonText: "Undo",
+        rightButtonText: "New Game"
+    },
+    "EnsureNewGame": {
+        text: "Are you sure?",
+        leftButtonText: "No",
+        rightButtonText: "Yes"
+    },
+};
+
 @ccclass
 export default class GameOverDialog extends cc.Component implements ED.EventListener {
 
     @property ({visible: false}) mIsButtonsActive = false;
+
+    @property({visible: false}) mCurrentType = "";
 
     // LIFE-CYCLE CALLBACKS:
 
@@ -16,8 +31,8 @@ export default class GameOverDialog extends cc.Component implements ED.EventList
         this.node.active = false;
 
         let typesSet = new Set<string>();
-        typesSet.add("GameOverDialogOpen");
-        typesSet.add("GameOverDialogClose");
+        typesSet.add("OpenDialogPopup");
+        //typesSet.add("CloseDialogPopup");
         ED.EventDispatcher.addListener(this, typesSet);
     }
 
@@ -30,13 +45,13 @@ export default class GameOverDialog extends cc.Component implements ED.EventList
 
         if (this.mIsButtonsActive) {
 
-            if (customEventData == "Undo") {
+            if (event.currentTarget.name == "LeftButton") {
 
-                ED.EventDispatcher.dispatchEvent(new ED.Event("GameOverDialogUndo", null));
+                ED.EventDispatcher.dispatchEvent(new ED.Event("DialogPopupLeft", {type: this.mCurrentType}));
             }
-            else if (customEventData == "NewGame") {
+            else if (event.currentTarget.name == "RightButton") {
     
-                ED.EventDispatcher.dispatchEvent(new ED.Event("GameOverDialogNewGame", null));
+                ED.EventDispatcher.dispatchEvent(new ED.Event("DialogPopupRight", {type: this.mCurrentType}));
             }
 
             ED.EventDispatcher.dispatchEvent(new ED.Event("PlayAudio", {clip: "ButtonClick"}));
@@ -45,7 +60,14 @@ export default class GameOverDialog extends cc.Component implements ED.EventList
         }
     }
 
-    openDialog() {
+    openDialog(type: string) {
+
+        this.mCurrentType = type;
+        let info = Dialogs[type];
+
+        this.node.getChildByName("Label").getComponent(cc.Label).string = info["text"];
+        this.node.getChildByName("LeftButton").getChildByName("Background").getChildByName("Label").getComponent(cc.Label).string = info["leftButtonText"];
+        this.node.getChildByName("RightButton").getChildByName("Background").getChildByName("Label").getComponent(cc.Label).string = info["rightButtonText"];
 
         this.node.active = true;
         this.node.scale = 0;
@@ -70,14 +92,14 @@ export default class GameOverDialog extends cc.Component implements ED.EventList
 
     onEventReceived(event: ED.Event): void {
 
-        if (event.type == "GameOverDialogOpen") {
+        if (event.type == "OpenDialogPopup") {
 
-            this.openDialog();
+            this.openDialog(event.data["type"]);
         }
-        else if (event.type == "GameOverDialogClose") {
+        //else if (event.type == "CloseDialogPopup") {
 
-            this.closeDialog();
-        }
+            //this.closeDialog();
+        //}
     }
 
     // update (dt) {}

@@ -2,6 +2,8 @@ const {ccclass, property} = cc._decorator;
 
 import * as ED from "./EventDispatcher";
 
+let TouchBlockerTweenTag = 1000;
+
 @ccclass
 export default class TouchBlocker extends cc.Component implements ED.EventListener {
 
@@ -22,8 +24,6 @@ export default class TouchBlocker extends cc.Component implements ED.EventListen
 
         ED.EventDispatcher.removeListener(this);
         this.node.off(cc.Node.EventType.TOUCH_START, this.onTouchEvent, this, true);
-        this.node.off(cc.Node.EventType.TOUCH_END, this.onTouchEvent, this, true);
-        this.node.off(cc.Node.EventType.TOUCH_CANCEL, this.onTouchEvent, this, true);
     }
 
     start () {
@@ -31,13 +31,11 @@ export default class TouchBlocker extends cc.Component implements ED.EventListen
         this.node.active = false;
         this.node.parent.zIndex = 10000;
         this.node.on(cc.Node.EventType.TOUCH_START, this.onTouchEvent, this, true);
-        this.node.on(cc.Node.EventType.TOUCH_END, this.onTouchEvent, this, true);
-        this.node.on(cc.Node.EventType.TOUCH_CANCEL, this.onTouchEvent, this, true);
     }
 
     onTouchEvent(event: cc.Event.EventTouch) {
 
-        this.mTarget.dispatchEvent(event);
+        ED.EventDispatcher.dispatchEvent(new ED.Event("TouchBlockerTouched", null));
         event.stopPropagation();
     }
 
@@ -45,6 +43,13 @@ export default class TouchBlocker extends cc.Component implements ED.EventListen
 
         let time = event.data["time"];
         if (event.type == "OpenTouchBlocker") {
+
+            if (this.mTarget) {
+
+                this.mTarget.removeFromParent(false);
+                this.mRealTargetParent.addChild(this.mTarget);
+                cc.Tween.stopAllByTag(TouchBlockerTweenTag);
+            }
 
             this.mTarget = event.data["target"];
             this.node.active = true;
@@ -59,12 +64,14 @@ export default class TouchBlocker extends cc.Component implements ED.EventListen
         } else if (event.type == "CloseTouchBlocker") {
 
             cc.tween(this.node)
+                .tag(TouchBlockerTweenTag)
                 .to(time, {opacity: 0})
                 .call(() => {
 
-                    this.mTarget.removeFromParent();
+                    this.mTarget.removeFromParent(false);
                     this.mRealTargetParent.addChild(this.mTarget);
                     this.node.active = false;
+                    this.mTarget = null;
                 })
                 .start();
         }
