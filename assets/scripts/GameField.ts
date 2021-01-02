@@ -16,11 +16,13 @@ const enum eTouchMoveDirection {
 
 export class CellInfo {
 
-    public block:  cc.Node;
-    public value:  number;
+    public block:           cc.Node;
+    public value:           number;
+    public currentlyMoved:  boolean;
     constructor() {
         this.block = null;
         this.value = 0;
+        this.currentlyMoved = false;
     }
 }
 
@@ -103,6 +105,7 @@ export default class GameField extends cc.Component implements ED.EventListener 
                     cell.value = 0;
                     cell.block.destroy();
                     cell.block = null;
+                    cell.currentlyMoved = false;
                 }
             });
         });
@@ -351,8 +354,9 @@ export default class GameField extends cc.Component implements ED.EventListener 
                                 {
                                     needMove = true;
                                 }
-                                else if (this.mCells[x][y].value == this.mCells[newX + 1][y].value)
+                                else if (this.mCells[x][y].value == this.mCells[newX + 1][y].value && this.mCells[newX + 1][y].currentlyMoved == false)
                                 {
+                                    this.mCells[newX + 1][y].currentlyMoved = true;
                                     needMove = true;
                                     ++newX;
                                     break;
@@ -394,8 +398,9 @@ export default class GameField extends cc.Component implements ED.EventListener 
                                 {
                                     needMove = true;
                                 }
-                                else if (this.mCells[x][y].value == this.mCells[newX - 1][y].value)
+                                else if (this.mCells[x][y].value == this.mCells[newX - 1][y].value && this.mCells[newX - 1][y].currentlyMoved == false)
                                 {
+                                    this.mCells[newX - 1][y].currentlyMoved = true;
                                     needMove = true;
                                     --newX;
                                     break;
@@ -437,8 +442,9 @@ export default class GameField extends cc.Component implements ED.EventListener 
                                 {
                                     needMove = true;
                                 }
-                                else if (this.mCells[x][y].value == this.mCells[x][newY + 1].value)
+                                else if (this.mCells[x][y].value == this.mCells[x][newY + 1].value && this.mCells[x][newY + 1].currentlyMoved == false)
                                 {
+                                    this.mCells[x][newY + 1].currentlyMoved = true;
                                     needMove = true;
                                     ++newY;
                                     break;
@@ -480,8 +486,9 @@ export default class GameField extends cc.Component implements ED.EventListener 
                                 {
                                     needMove = true;
                                 }
-                                else if (this.mCells[x][y].value == this.mCells[x][newY - 1].value)
+                                else if (this.mCells[x][y].value == this.mCells[x][newY - 1].value && this.mCells[x][newY - 1].currentlyMoved == false)
                                 {
+                                    this.mCells[x][newY - 1].currentlyMoved = true;
                                     needMove = true;
                                     --newY;
                                     break;
@@ -519,7 +526,10 @@ export default class GameField extends cc.Component implements ED.EventListener 
 
             cc.tween(this.node)
                 .delay(this.moveBlockTime)
-                .call(() => { nodeToDelete.destroy(); })
+                .call(() => { 
+                    nodeToDelete.destroy();
+                    this.mCells[newX][newY].currentlyMoved = false;
+                })
                 .start();
         }
         else
