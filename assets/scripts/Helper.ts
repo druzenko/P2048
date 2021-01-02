@@ -2,14 +2,15 @@ const {ccclass, property} = cc._decorator;
 
 import * as GameField from "./GameField";
 import CryptoJS = require("crypto-js");
+import Scores from "./Scores"
 
 let encryptKey = "Vitalier";
 
-let gLastFieldsStack = new Map<number, Array<Array<number>>>();
+let gLastFieldsStack = new Map<number, Array<[Array<number>, number/*, number*/]>>();
 
 let gMaxStackNumber: number = 100;
 
-let gPreviousGameField: Array<number> = null;
+let gPreviousGameField: [Array<number>, number/*, number*/] = null;
 
 @ccclass
 export default class Helper {
@@ -38,9 +39,9 @@ export default class Helper {
         }
     }
 
-    public static PopLastField(dimension: number): Array<number> {
+    public static PopLastField(dimension: number): [Array<number>, number/*, number*/] {
 
-        let lastField: Array<number> = null;
+        let lastField: [Array<number>, number/*, number*/] = null;
         let stack = gLastFieldsStack.get(dimension);
         if (stack && stack.length > 0) {
 
@@ -102,7 +103,7 @@ export default class Helper {
 
             if (stack == null) {
 
-                stack = new Array<Array<number>>();
+                stack = new Array<[Array<number>, number/*, number*/]>();
                 gLastFieldsStack.set(dimension, stack);
             }
 
@@ -114,7 +115,12 @@ export default class Helper {
             stack.push(gPreviousGameField);
         }
 
-        gPreviousGameField = save;
+        gPreviousGameField = null;
+        gPreviousGameField = [null, 0/*, 0*/];
+
+        gPreviousGameField[0] = save;
+        gPreviousGameField[1] = Scores.getCurrentScore();
+        //gPreviousGameField[2] = Scores.getBestScore();
     }
 
     public static loadGame(dimension: number): string {

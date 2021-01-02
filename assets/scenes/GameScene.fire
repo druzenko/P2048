@@ -189,7 +189,7 @@
       "array": [
         0,
         0,
-        350.5226617151654,
+        275.2087512843091,
         0,
         0,
         0,
@@ -1010,8 +1010,6 @@
       "__id__": 5
     },
     "_enabled": true,
-    "mCurrentScore": 0,
-    "mBestScore": 0,
     "mCurrentScoreLabel": null,
     "mBestScoreLabel": null,
     "_id": "21Z9S3VjFDYYLNwofXkhD+"

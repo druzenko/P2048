@@ -186,8 +186,8 @@ export default class GameField extends cc.Component implements ED.EventListener 
             this.restartGame();
         } else {
 
-            Helper.saveGame(this.mCells, this.dimension);
             ED.EventDispatcher.dispatchEvent(new ED.Event("GameLoaded", {dimension: this.dimension}));
+            Helper.saveGame(this.mCells, this.dimension);
         }
     }
 
@@ -638,7 +638,14 @@ export default class GameField extends cc.Component implements ED.EventListener 
             if (LastField) {
 
                 Helper.ClearPreviousGameField();
-                this.loadGameField(LastField);
+                this.loadGameField(LastField[0]);
+
+                ED.EventDispatcher.dispatchEvent(new ED.Event("GameUndone",
+                { 
+                    current: LastField[1],
+                    //best: LastField[2],
+                    dimension: this.dimension
+                }));
             }
         }
     }

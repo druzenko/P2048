@@ -3,14 +3,13 @@ import * as ED from "./EventDispatcher"
 
 const {ccclass, property} = cc._decorator;
 
+let gCurrentScore = 0;
+let gBestScore = 0;
+
 @ccclass
 export default class Scores extends cc.Component implements ED.EventListener {
 
     // LIFE-CYCLE CALLBACKS:
-
-    @property({visible: false}) mCurrentScore = 0;
-
-    @property({visible: false}) mBestScore = 0;
 
     @property({visible: false, type: cc.Label}) mCurrentScoreLabel = null;
 
@@ -22,6 +21,7 @@ export default class Scores extends cc.Component implements ED.EventListener {
         typesSet.add("GameReseted");
         typesSet.add("GameLoaded");
         typesSet.add("CurrentScoreChanged");
+        typesSet.add("GameUndone");
         ED.EventDispatcher.addListener(this, typesSet);
     }
     
@@ -41,30 +41,55 @@ export default class Scores extends cc.Component implements ED.EventListener {
         let dimension = event.data["dimension"];
         if (event.type == "GameReseted") {
 
-            this.mBestScore = Helper.loadScore(dimension, true);
-            this.mBestScoreLabel.string = this.mBestScore.toString();
+            gBestScore = Helper.loadScore(dimension, true);
+            this.mBestScoreLabel.string = gBestScore.toString();
             this.mCurrentScoreLabel.string = "0";
-            this.mCurrentScore = 0;
+            gCurrentScore = 0;
+            Helper.saveScore(gCurrentScore, dimension, false);
         } else if (event.type == "GameLoaded") {
 
-            this.mBestScore = Helper.loadScore(dimension, true);
-            this.mBestScoreLabel.string = this.mBestScore.toString();
-            this.mCurrentScore = Helper.loadScore(dimension, false)
-            this.mCurrentScoreLabel.string = this.mCurrentScore.toString();
-        } else if ("CurrentScoreChanged") {
+            gBestScore = Helper.loadScore(dimension, true);
+            this.mBestScoreLabel.string = gBestScore.toString();
+            gCurrentScore = Helper.loadScore(dimension, false)
+            this.mCurrentScoreLabel.string = gCurrentScore.toString();
+        } else if (event.type == "CurrentScoreChanged") {
 
-            this.mCurrentScore += event.data["diff"];
-            this.mCurrentScoreLabel.string = this.mCurrentScore.toString();
-            Helper.saveScore(this.mCurrentScore, dimension, false);
+            gCurrentScore += event.data["diff"];
+            this.mCurrentScoreLabel.string = gCurrentScore.toString();
+            Helper.saveScore(gCurrentScore, dimension, false);
 
-            if (this.mCurrentScore > this.mBestScore) {
+            if (gCurrentScore > gBestScore) {
 
-                this.mBestScore = this.mCurrentScore;
-                this.mBestScoreLabel.string = this.mBestScore.toString();
-                Helper.saveScore(this.mBestScore, dimension, true);
+                gBestScore = gCurrentScore;
+                this.mBestScoreLabel.string = gBestScore.toString();
+                Helper.saveScore(gBestScore, dimension, true);
             }
+        } else if (event.type == "GameUndone") {
+
+            gCurrentScore = event.data["current"];
+            //let bestScore = event.data["best"];
+
+            this.mCurrentScoreLabel.string = gCurrentScore.toString();
+            Helper.saveScore(gCurrentScore, dimension, false);
+
+            /*if (bestScore != gBestScore) {
+
+                gBestScore = bestScore;
+                this.mBestScoreLabel.string = gBestScore.toString();
+                Helper.saveScore(gBestScore, dimension, true);
+            }*/
         }
     }
+
+    public static getCurrentScore(): number {
+
+        return gCurrentScore;
+    }
+
+    /*public static getBestScore(): number {
+
+        return gBestScore;
+    }*/
 
     // update (dt) {}
 }
