@@ -8,9 +8,6 @@
   },
   "author": "",
   "license": "ISC",
-  "devDependencies": {
-    "encryptjs": "^2.0.0"
-  },
   "dependencies": {
     "crypto-js": "^4.0.0"
   }
