@@ -190,6 +190,7 @@ export default class GameField extends cc.Component implements ED.EventListener 
         } else {
 
             ED.EventDispatcher.dispatchEvent(new ED.Event("GameLoaded", {dimension: this.dimension}));
+            Helper.ClearPreviousGameField();
             Helper.saveGame(this.mCells, this.dimension);
         }
     }

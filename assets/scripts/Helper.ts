@@ -4,7 +4,7 @@ import * as GameField from "./GameField";
 import CryptoJS = require("crypto-js");
 import Scores from "./Scores"
 
-let encryptKey = "Vitalier";
+let encryptKey = "Vitalier1";
 
 let gLastFieldsStack = new Map<number, Array<[Array<number>, number/*, number*/]>>();
 
@@ -94,8 +94,7 @@ export default class Helper {
             }
         }
 
-        let encrypted = CryptoJS.AES.encrypt(JSON.stringify(save), encryptKey);
-        cc.sys.localStorage.setItem("field" + dimension.toString(), encrypted.toString());
+        this.saveProperty("field" + dimension.toString(), JSON.stringify(save));
 
         if (gPreviousGameField) {
 
@@ -125,32 +124,22 @@ export default class Helper {
 
     public static loadGame(dimension: number): string {
 
-        let encrypted = cc.sys.localStorage.getItem("field" + dimension.toString());
-
-        if (encrypted != null && encrypted.length > 0) {
-
-            let decrypted = CryptoJS.AES.decrypt(encrypted, encryptKey);
-            return decrypted.toString(CryptoJS.enc.Utf8);
-        }
-
-        return null;
+        return this.loadProperty("field" + dimension.toString());
     }
 
     public static saveScore(score: number, dimension: number, bestScore: boolean): void {
 
         let key = (bestScore) ? "BestScore" : "Score";
-        let encrypted = CryptoJS.AES.encrypt(score.toString(), encryptKey);
-        cc.sys.localStorage.setItem(key + dimension.toString(), encrypted.toString());
+        this.saveProperty(key + dimension.toString(), score.toString());
     }
 
     public static loadScore(dimension: number, bestScore: boolean): number {
 
         let key = (bestScore) ? "BestScore" : "Score";
-        let encrypted = cc.sys.localStorage.getItem(key + dimension.toString());
-        if (encrypted != null) {
-
-            let decrypted = CryptoJS.AES.decrypt(encrypted, encryptKey);
-            return parseInt(decrypted.toString(CryptoJS.enc.Utf8));
+        let score = this.loadProperty(key + dimension.toString());
+        if (score != null) {
+            
+            return parseInt(score);
         }
 
         return 0;
