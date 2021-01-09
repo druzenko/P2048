@@ -67,6 +67,9 @@ export default class GameField extends cc.Component implements ED.EventListener 
         typesSet.add("ModeChanged");
         typesSet.add("Undo");
         ED.EventDispatcher.addListener(this, typesSet);
+
+        //cc.systemEvent.on(cc.SystemEvent.EventType.KEY_DOWN, this.onKeyDown, this);
+        //cc.systemEvent.on(cc.SystemEvent.EventType.KEY_UP, this.onKeyUp, this);
     }
 
     start () {
@@ -201,6 +204,9 @@ export default class GameField extends cc.Component implements ED.EventListener 
         this.node.parent.off(cc.Node.EventType.TOUCH_END, this.onTouchStart, this, true);
         this.node.parent.off(cc.Node.EventType.TOUCH_CANCEL, this.onTouchStart, this, true);
         ED.EventDispatcher.removeListener(this);
+
+        //cc.systemEvent.off(cc.SystemEvent.EventType.KEY_DOWN, this.onKeyDown, this);
+        //cc.systemEvent.off(cc.SystemEvent.EventType.KEY_UP, this.onKeyUp, this);
     }
 
     onTouchStart(event: cc.Event.EventTouch) {
@@ -616,6 +622,8 @@ export default class GameField extends cc.Component implements ED.EventListener 
 
             } else if (DialogType == "EnsureNewGame") {
 
+            } else if (DialogType == "EnsureExitGame") {
+
             }
 
             this.mIsTouchesEnabled = true;
@@ -630,6 +638,9 @@ export default class GameField extends cc.Component implements ED.EventListener 
             } else if (DialogType == "EnsureNewGame") {
 
                 this.restartGame();
+            } else if (DialogType == "EnsureExitGame") {
+
+                cc.game.end();
             }
             
             this.mIsTouchesEnabled = true;
@@ -657,6 +668,26 @@ export default class GameField extends cc.Component implements ED.EventListener 
                     //best: LastField[2],
                     dimension: this.dimension
                 }));
+            }
+        }
+    }
+
+    onKeyDown(event: cc.Event.EventKeyboard) {
+
+        console.log("DEBUG GameField::onKeyDown: keyCode = " + event.keyCode);
+    }
+
+    onKeyUp(event: cc.Event.EventKeyboard) {
+
+        console.log("DEBUG GameField::onKeyUp: mIsTouchesEnabled = " + this.mIsTouchesEnabled + ", keyCode = " + event.keyCode);
+        if (this.mIsTouchesEnabled) {
+
+            console.log("DEBUG GameField::onKeyUp: keyCode = " + event.keyCode + " , back = " + cc.macro.KEY.back);
+            switch(event.keyCode) {
+
+                case cc.macro.KEY.back:
+                ED.EventDispatcher.dispatchEvent(new ED.Event("OpenDialogPopup", {type: "EnsureExitGame"}));
+                break;
             }
         }
     }

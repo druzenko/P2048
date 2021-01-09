@@ -13,6 +13,11 @@ let Dialogs = {
         leftButtonText: "No",
         rightButtonText: "Yes"
     },
+    "EnsureExitGame": {
+        text: "Do you want to exit game?",
+        leftButtonText: "No",
+        rightButtonText: "Yes"
+    },
 };
 
 @ccclass

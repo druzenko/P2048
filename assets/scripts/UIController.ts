@@ -30,8 +30,7 @@ export default class UIController extends cc.Component implements ED.EventListen
     onUIButtonClicked(event, customEventData) {
     
         if (this.mIsModesShown == true) {
-    
-            console.log(event.currentTarget.name);
+            
             this.hideModesLayout();
             ED.EventDispatcher.dispatchEvent(new ED.Event("CloseTouchBlocker", { time: 0.1 }));
         }
@@ -46,6 +45,8 @@ export default class UIController extends cc.Component implements ED.EventListen
 
         } else if (event.currentTarget.name == "SettingsButton") {
 
+            ED.EventDispatcher.dispatchEvent(new ED.Event("OpenSettingsWindow", null));
+            
         } else if (event.currentTarget.name == "LeadersButton") {
 
         } else if (event.currentTarget.name == "ModesButton") {
