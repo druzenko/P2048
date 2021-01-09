@@ -1,0 +1,11 @@
+/assets/
+/js backups (useful for debugging)/
+/jsb-adapter/
+/publish/
+/src/
+.cocos-project.json
+.sdkbox_packages.json
+backup-2021-01-10.zip
+cocos-project-template.json
+main.js
+project.json
